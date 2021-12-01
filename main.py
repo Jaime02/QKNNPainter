@@ -1,5 +1,4 @@
 import os
-
 import numpy as np
 from PySide6.QtCore import Qt, QPoint
 from PySide6.QtGui import QPainter, QPen, QPixmap, QPaintEvent, QMouseEvent, QColor, QImage
@@ -28,8 +27,8 @@ class KNNWidget(QWidget):
     @staticmethod
     def calculate_distance(pixmap: np.array, dataset_pixmap: np.array):
         # This function calculates the distance between the pixmap and the dataset
-        # The distance is calculated by the manhattan distance using numpy
-        return np.sum(np.abs(pixmap - dataset_pixmap))
+        # The distance is calculated by the euclidean distance
+        return np.sqrt(np.sum(np.square(pixmap - dataset_pixmap)))
 
     def perform_knn(self):
         if not self.main_window.dataset_loaded:
@@ -45,7 +44,13 @@ class KNNWidget(QWidget):
                 distance = self.calculate_distance(pixmap, array)
                 distances[i*1000+j] = distance
 
-        # Get the index of the smallest distance
+        # Get the index of 5 of the smallest distances. The array is not sorted
+        indices = np.argsort(distances)[:20]
+        indice_mas_parecido = indices[0]
+
+        imagen_mas_parecida = self.dataset[indice_mas_parecido // 1000][indice_mas_parecido % 1000]
+        plt.imshow(imagen_mas_parecida.reshape(28, 28))
+
         plt.figure()
         plt.plot(distances)
         plt.show()
@@ -56,18 +61,20 @@ class PixelPaintingWidget(QWidget):
         QWidget.__init__(self)
         self.main_window = main_window
         self.pixmap = QPixmap(28, 28)
-        self.pixmap.fill(Qt.white)
+        self.pixmap.fill(Qt.black)
 
         self.painter = QPainter(self.pixmap)
-        self.pen = QPen(QColor(0, 0, 0))
-        self.pen.setWidth(3)
+        self.pen = QPen(QColor(255, 255, 255))
+        self.pen.setWidth(2)
         self.painter.setPen(self.pen)
 
-    def save_png(self):
-        self.pixmap.save("test.png")
+    def save_bin(self):
+        # Saves the current pixmap on a file
+        with open("image.bin", "wb+") as f:
+            f.write(self.pixmap.toImage().convertToFormat(QImage.Format_Grayscale8).bits().tobytes())
 
     def clear_pixmap(self):
-        self.pixmap.fill(Qt.white)
+        self.pixmap.fill(Qt.black)
         self.update()
 
     def paintEvent(self, event: QPaintEvent):
@@ -120,8 +127,8 @@ class MainWindow(QMainWindow):
         self.clear_button = QPushButton("Clear")
         self.buttons_layout.addWidget(self.clear_button)
 
-        self.save_png_button = QPushButton("Save as PNG")
-        self.buttons_layout.addWidget(self.save_png_button)
+        self.save_bin_button = QPushButton("Save as BIN ")
+        self.buttons_layout.addWidget(self.save_bin_button)
 
         self.perform_knn_button = QPushButton("Perform KNN")
         self.perform_knn_button.setDisabled(True)
@@ -139,7 +146,7 @@ class MainWindow(QMainWindow):
         self.pixel_painting_widget.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
 
         self.clear_button.clicked.connect(self.pixel_painting_widget.clear_pixmap)
-        self.save_png_button.clicked.connect(self.pixel_painting_widget.save_png)
+        self.save_bin_button.clicked.connect(self.pixel_painting_widget.save_bin)
 
         self.main_layout.addWidget(self.pixel_painting_widget)
 
@@ -164,5 +171,5 @@ if __name__ == '__main__':
     app = QApplication([])
     window = MainWindow()
     window.show()
-    window.resize(800, 600)
+    window.resize(630, 700)
     app.exec()
