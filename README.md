@@ -1,8 +1,10 @@
 # QKNNPainter
 K-NN algorithm performed in realtime using PySide
+    
+![thumbnail](thumbnail.png)
 
-# How to install dependencies and run the program
+## Install dependencies:
+> pip install -r requirements.txt
 
-1. > `pip install -r requirements.txt`
-
-2. > `python main.py`
+## Run the program:
+> python main.py
